@@ -20,18 +20,18 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "Core",
+            name: "HTTPClientCore",
             dependencies: []
         ),
         .testTarget(
-            name: "CoreTests",
-            dependencies: [.target(name: "Core")]
+            name: "HTTPClientCoreTests",
+            dependencies: [.target(name: "HTTPClientCore")]
         ),
         .target(
             name: "HTTPClient",
             dependencies: [
                 .product(name: "Logging", package: "swift-log"),
-                .target(name: "Core")
+                .target(name: "HTTPClientCore")
             ]
         ),
         .target(
@@ -46,7 +46,7 @@ let package = Package(
             name: "CombineHTTPClient",
             dependencies: [
                 .product(name: "Logging", package: "swift-log"),
-                .target(name: "Core")
+                .target(name: "HTTPClientCore")
             ]
         ),
         .testTarget(
