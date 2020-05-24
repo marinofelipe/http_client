@@ -1,12 +1,12 @@
 // MARK: - Enum properties
 
 extension Result {
-    var success: Success? {
+    var value: Success? {
         guard case let .success(value) = self else { return nil }
         return value
     }
 
-    var failure: Failure? {
+    var error: Failure? {
         guard case let .failure(value) = self else { return nil }
         return value
     }

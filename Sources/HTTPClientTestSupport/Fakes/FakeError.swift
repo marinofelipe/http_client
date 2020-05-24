@@ -1,1 +1,3 @@
-public struct FakeError: Error { }
+public struct FakeError: Error {
+    public init() { }
+}

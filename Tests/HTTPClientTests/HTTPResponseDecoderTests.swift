@@ -14,8 +14,9 @@ final class HTTPResponseDecoderTests: XCTestCase {
         let decoder = JSONDecoder()
         let responseDecoder = HTTPResponseDecoder(jsonDecoder: decoder)
 
-        XCTAssertThrowsError(decoded = try responseDecoder.decode(Data()),
-                             "It throws a decoding error") { error in
+        var decoded: ResponseBodyMock?
+        XCTAssertThrowsError(decoded = try responseDecoder.decode(Data()), "It throws a decoding error") { error in
+            XCTAssertNil(decoded, "Decoding failed")
             let decodingError = error as? DecodingError
             XCTAssertNotNil(decodingError, "It throws a decoding error")
         }
