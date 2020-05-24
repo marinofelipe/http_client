@@ -1,11 +1,10 @@
 import XCTest
+import HTTPClientTestSupport
 @testable import HTTPClientCore
 
-final class DataExtensionTests: XCTestCase {
+final class SetExtensionTests: XCTestCase {
 
-    func testPrettyPrinted() {
-        let data = "{\"foo\": \"bar\"}".data(using: .utf8)
-        let prettyPrinted = data?.prettyPrinted
-        XCTAssertEqual(prettyPrinted, "{\n  \"foo\" : \"bar\"\n}")
+    func testDefaultSuccessfulStatusCode() {
+        XCTAssertEqual(Set.defaultSuccessfulStatusCodes, Set(200..<300))
     }
 }

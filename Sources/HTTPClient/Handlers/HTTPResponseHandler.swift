@@ -1,4 +1,5 @@
 import Foundation
+import HTTPClientCore
 
 // MARK: - Abstraction
 
@@ -43,10 +44,4 @@ public struct HTTPResponseHandler: HTTPResponseHandling {
 
         return (isSucceeded: true, statusCode: response.statusCode)
     }
-}
-
-// MARK: - Default successful status codes
-
-public extension Set where Element == Int {
-    static var defaultSuccessfulStatusCodes: Set<Int> = Set(200..<300)
 }
