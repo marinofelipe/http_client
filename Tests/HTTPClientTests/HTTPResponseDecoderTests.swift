@@ -1,4 +1,5 @@
 import XCTest
+import HTTPClientTestSupport
 @testable import HTTPClient
 
 final class HTTPResponseDecoderTests: XCTestCase {

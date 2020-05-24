@@ -45,7 +45,10 @@ let package = Package(
         ),
         .testTarget(
             name: "HTTPClientTests",
-            dependencies: [.target(name: "HTTPClient")]
+            dependencies: [
+                .target(name: "HTTPClient"),
+                .target(name: "HTTPClientTestSupport")
+            ]
         ),
         .target(
             name: "CombineHTTPClient",

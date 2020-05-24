@@ -1,10 +1,9 @@
 import XCTest
-import Logging
-import HTTPClientTestSupport
-@testable import HTTPClient
-@testable import HTTPClientCore
+@testable import CombineHTTPClient
+//@testable import HTTPClientCore
+//import Logging
 
-final class HTTPClientTests: XCTestCase {
+final class CombineHTTPClientTests: XCTestCase {
 
     private var sessionMock = URLSessionMock()
     private var client: HTTPClient!

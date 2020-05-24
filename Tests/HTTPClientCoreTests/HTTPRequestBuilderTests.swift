@@ -1,5 +1,6 @@
 import XCTest
-@testable import HTTPClient
+import HTTPClientTestSupport
+@testable import HTTPClientCore
 
 final class HTTPRequestBuilderTests: XCTestCase {
 

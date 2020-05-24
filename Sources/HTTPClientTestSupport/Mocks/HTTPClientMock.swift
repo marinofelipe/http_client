@@ -1,32 +1,33 @@
 import HTTPClient
+import HTTPClientCore
 import Foundation
 
 public final class HTTPClientMock: HTTPClientProtocol {
     public private(set) var didCallPerform: Bool = false
     public private(set) var performCallsCount = 0
     public private(set) var lastRequest: URLRequest?
-    public private(set) var lastCompletion: ((Result<HTTPResponse, Error>) -> Void)?
+    public private(set) var lastCompletion: ((Result<HTTPResponse, HTTPResponseError>) -> Void)?
 
     public init() { }
 
     @discardableResult
     public func perform(_ request: URLRequest,
-                 completion: @escaping (Result<HTTPResponse, Error>) -> Void) -> HTTPTask {
+                 completion: @escaping (Result<HTTPResponse, HTTPResponseError>) -> Void) -> HTTPTask {
         didCallPerform = true
         performCallsCount += 1
         lastRequest = request
         lastCompletion = completion
 
-        completion(stubbedResult ?? .failure(FakeError()))
+        completion(stubbedResult ?? .failure(.unknown))
 
         return HTTPTaskFake()
     }
 
     // MARK: Stub
 
-    private(set) var stubbedResult: Result<HTTPResponse, Error>?
+    private(set) var stubbedResult: Result<HTTPResponse, HTTPResponseError>?
 
-    public func stubResult(with value: Result<HTTPResponse, Error>) {
+    public func stubResult(with value: Result<HTTPResponse, HTTPResponseError>) {
         stubbedResult = value
     }
 }

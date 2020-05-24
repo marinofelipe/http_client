@@ -3,7 +3,7 @@ import HTTPClientCore
 import Foundation
 
 /// An HTTP client built on top of Combine and its Foundation conveniences.
-public struct HTTPClient {
+public struct CombineHTTPClient {
     private let session: URLSession
 
     public init(session: URLSession) {
@@ -12,8 +12,8 @@ public struct HTTPClient {
 
     /// Performs the `request` with generic `S` and `F` for success and failure response bodies respectively.
     ///
-    /// *Note*: For empty body responses, or requests that only the result as success matters, **make sure** you make
-    /// it generic over `Void`.
+    /// *Note*: For empty body responses, or requests that only the result as success matters,
+    /// **make sure** you make it generic over `Void`.
     ///
     /// - Parameters:
     ///   - request: The `URLRequest` to be run.

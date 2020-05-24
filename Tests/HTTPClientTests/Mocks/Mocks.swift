@@ -8,13 +8,6 @@ struct DecodableErrorMock: Codable, Equatable, Error, LocalizedError {
     let id: Int
 }
 
-// MARK: - Response body mock
-
-struct ResponseBodyMock: Codable, Equatable {
-    let id: Int
-    let description: String
-}
-
 // MARK: - URL session mock
 
 class URLSessionMock: URLSessionProtocol {
