@@ -5,10 +5,12 @@ import PackageDescription
 let package = Package(
     name: "HTTPClient",
     products: [
+        // 🌐 An easy to use HTTPClient built on top of URLSession
         .library(
             name: "HTTPClient",
             targets: ["HTTPClient"]
         ),
+        // 🌐🚜 An easy to use HTTPClient built for Combine on top of URLSession and Foundation Combine's conveniences
         .library(
             name: "CombineHTTPClient",
             targets: ["CombineHTTPClient"]
