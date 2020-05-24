@@ -22,19 +22,19 @@ public struct HTTPResponseHandler: HTTPResponseHandling {
     public func handle(params: ResponseParams) throws -> (isSucceeded: Bool, statusCode: Int) {
         guard params.error == nil else {
             if let urlError = params.error as? URLError {
-                throw HTTPRequestError.underlying(urlError)
+                throw HTTPResponseError.underlying(urlError)
             }
 
             // TODO: could also return response for logger to perform side effect
 
-            throw HTTPRequestError.unknown
+            throw HTTPResponseError.unknown
         }
 
         guard let response = params.response as? HTTPURLResponse else {
             if let response = params.response {
-                throw HTTPRequestError.invalidResponse(response)
+                throw HTTPResponseError.invalidResponse(response)
             } else {
-                throw HTTPRequestError.unknown
+                throw HTTPResponseError.unknown
             }
         }
 

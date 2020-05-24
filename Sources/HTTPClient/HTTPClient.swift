@@ -1,11 +1,12 @@
 import Foundation
+import HTTPClientCore
 
 // MARK: - Abstraction
 
 public protocol HTTPClientProtocol {
     @discardableResult
     func perform(_ request: URLRequest,
-                 completion: @escaping (Result<HTTPResponse, Error>) -> Void) -> HTTPTask
+                 completion: @escaping (Result<HTTPResponse, HTTPResponseError>) -> Void) -> HTTPTask
 }
 
 // MARK: - Concrete
@@ -37,13 +38,13 @@ public final class HTTPClient: HTTPClientProtocol {
     /// - Returns: A running HTTPTask.
     @discardableResult
     public func perform(_ request: URLRequest,
-                        completion: @escaping (Result<HTTPResponse, Error>) -> Void) -> HTTPTask {
+                        completion: @escaping (Result<HTTPResponse, HTTPResponseError>) -> Void) -> HTTPTask {
 
         middlewares?.forEach { $0.respond(to: request) }
 
         let task = session.dataTask(with: request) { [weak self] data, urlResponse, error in
             guard let self = self else { return }
-            let result: Result<HTTPResponse, Error>
+            let result: Result<HTTPResponse, HTTPResponseError>
             do {
                 let responseStatus = try self.responseHandler.handle(params: (data, response: urlResponse, error))
                 let response = HTTPResponse(body: data,
@@ -52,7 +53,11 @@ public final class HTTPClient: HTTPClientProtocol {
                                             urlResponse: urlResponse)
                 result = .success(response)
             } catch {
-                result = .failure(error)
+                if let httpResponseError = error as? HTTPResponseError {
+                    result = .failure(httpResponseError)
+                } else {
+                    result = .failure(.unknown)
+                }
             }
             // Performed on URLSessionProtocol.delegateQueue
             completion(result)

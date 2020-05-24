@@ -22,7 +22,7 @@ public final class LoggerMiddleware: HTTPClientMiddleware {
         """)
     }
 
-    public func respond(to responseResult: Result<HTTPResponse, Error>) {
+    public func respond(to responseResult: Result<HTTPResponse, HTTPResponseError>) {
         let printStatement: String
         do {
             let response = try responseResult.get()

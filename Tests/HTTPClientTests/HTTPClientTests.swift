@@ -1,5 +1,6 @@
 import XCTest
 @testable import HTTPClient
+@testable import HTTPClientCore
 import Logging
 
 final class HTTPClientTests: XCTestCase {
@@ -20,7 +21,7 @@ final class HTTPClientTests: XCTestCase {
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
 
-        var resultBlock: Result<HTTPResponse, Error>?
+        var resultBlock: Result<HTTPResponse, HTTPResponseError>?
         client.perform(request) { result in
             resultBlock = result
         }
@@ -43,7 +44,7 @@ final class HTTPClientTests: XCTestCase {
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
 
-        var resultBlock: Result<HTTPResponse, Error>?
+        var resultBlock: Result<HTTPResponse, HTTPResponseError>?
         client.perform(request) { result in
             resultBlock = result
         }
@@ -74,7 +75,7 @@ final class HTTPClientTests: XCTestCase {
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
 
-        var resultBlock: Result<HTTPResponse, Error>?
+        var resultBlock: Result<HTTPResponse, HTTPResponseError>?
         client.perform(request) { result in
             resultBlock = result
         }
@@ -98,7 +99,7 @@ final class HTTPClientTests: XCTestCase {
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
 
-        var resultBlock: Result<HTTPResponse, Error>?
+        var resultBlock: Result<HTTPResponse, HTTPResponseError>?
         client.perform(request) { result in
             resultBlock = result
         }
@@ -131,15 +132,14 @@ final class HTTPClientTests: XCTestCase {
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
 
-        var resultBlock: Result<HTTPResponse, Error>?
+        var resultBlock: Result<HTTPResponse, HTTPResponseError>?
         client.perform(request) { result in
             resultBlock = result
         }
 
         XCTAssertThrowsError(try resultBlock?.get(), "It throws error") { error in
-            let httpRequestError = error as? HTTPRequestError
-
-            guard case let .underlying(urlError) = httpRequestError else {
+            let httpResponseError = error as? HTTPResponseError
+            guard case let .underlying(urlError) = httpResponseError else {
                 XCTFail("Received an unexpected HTTPRequestError")
                 return
             }
@@ -163,7 +163,7 @@ final class HTTPClientTests: XCTestCase {
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
 
-        var resultBlock: Result<HTTPResponse, Error>?
+        var resultBlock: Result<HTTPResponse, HTTPResponseError>?
         client.perform(request) { result in
             resultBlock = result
         }
@@ -181,14 +181,14 @@ final class MiddlewareMock: HTTPClientMiddleware {
     private(set) var didCallRespondToRequest: Bool = false
     private(set) var didCallRespondToResult: Bool = false
     private(set) var lastRequest: URLRequest?
-    private(set) var lastResult: Result<HTTPResponse, Error>?
+    private(set) var lastResult: Result<HTTPResponse, HTTPResponseError>?
 
     func respond(to request: URLRequest) {
         didCallRespondToRequest = true
         lastRequest = request
     }
 
-    func respond(to responseResult: Result<HTTPResponse, Error>) {
+    func respond(to responseResult: Result<HTTPResponse, HTTPResponseError>) {
         didCallRespondToResult = true
         lastResult = responseResult
     }

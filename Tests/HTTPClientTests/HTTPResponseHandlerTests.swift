@@ -1,4 +1,5 @@
 import XCTest
+@testable import HTTPClientCore
 @testable import HTTPClient
 
 final class HTTPResponseHandlerTests: XCTestCase {
@@ -11,16 +12,16 @@ final class HTTPResponseHandlerTests: XCTestCase {
         let responseParams: HTTPResponseHandling.ResponseParams = (data: nil, response: nil, error: nil)
 
         XCTAssertThrowsError(try handler.handle(params: responseParams), "It throws an error") { error in
-            XCTAssertEqual(error as? HTTPRequestError, .unknown, "The error thrown is a HTTPRequestError.unknown")
+            XCTAssertEqual(error as? HTTPResponseError, .unknown, "The error thrown is a HTTPRequestError.unknown")
         }
     }
 
     func testHandleWithMappedNSURLErrorAndNoResponse() {
-        let errorMock = HTTPRequestError.unknown
+        let errorMock = HTTPResponseError.unknown
         let responseParamsMock: HTTPResponseHandling.ResponseParams = (data: dataMock, response: nil, error: errorMock)
 
         XCTAssertThrowsError(try handler.handle(params: responseParamsMock), "It throws an error") { error in
-            XCTAssertEqual(error as? HTTPRequestError, .unknown, "The error thrown is a HTTPRequestError.unknown")
+            XCTAssertEqual(error as? HTTPResponseError, .unknown, "The error thrown is a HTTPRequestError.unknown")
         }
     }
 
@@ -31,7 +32,7 @@ final class HTTPResponseHandlerTests: XCTestCase {
         let responseParamsMock: HTTPResponseHandling.ResponseParams = (data: dataMock, response: nil, error: error)
 
         XCTAssertThrowsError(try handler.handle(params: responseParamsMock), "It throws an error") { error in
-            let httpRequestError = error as? HTTPRequestError
+            let httpRequestError = error as? HTTPResponseError
 
             guard case let .underlying(urlError) = httpRequestError else {
                 XCTFail("Received an unexpected HTTPRequestError")
@@ -52,7 +53,7 @@ final class HTTPResponseHandlerTests: XCTestCase {
         let responseParamsMock: HTTPResponseHandling.ResponseParams = (data: dataMock, response: Helpers.makeURLResponse(statusCode: 500), error: error)
 
         XCTAssertThrowsError(try handler.handle(params: responseParamsMock), "It throws an error") { error in
-            let httpRequestError = error as? HTTPRequestError
+            let httpRequestError = error as? HTTPResponseError
 
             guard case let .underlying(urlError) = httpRequestError else {
                 XCTFail("Received an unexpected HTTPRequestError")
