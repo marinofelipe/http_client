@@ -13,7 +13,7 @@ final class CombineHTTPClientTests: XCTestCase {
         try super.setUpWithError()
 
         let configuration = URLSessionConfiguration.ephemeral
-        configuration.protocolClasses = [MockURLProtocol.self]
+        configuration.protocolClasses = [URLProtocolMock.self]
         let urlSession = URLSession(configuration: configuration)
 
         sut = CombineHTTPClient(session: urlSession)
@@ -23,7 +23,7 @@ final class CombineHTTPClientTests: XCTestCase {
         disposeBag.removeAll()
         disposeBag = nil
         sut = nil
-        MockURLProtocol.cleanup()
+        URLProtocolMock.cleanup()
 
         try super.tearDownWithError()
     }
@@ -36,7 +36,7 @@ final class CombineHTTPClientTests: XCTestCase {
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
         let url = try XCTUnwrap(request.url)
 
-        MockURLProtocol.stubbedRequestHandler = { request in
+        URLProtocolMock.stubbedRequestHandler = { request in
           let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil))
           return (response, nil)
         }
@@ -60,8 +60,8 @@ final class CombineHTTPClientTests: XCTestCase {
         XCTAssertEqual(receivedResponse?.statusCode, 200, "It has the correct status code")
         XCTAssertEqual(receivedResponse?.value, .success(EmptyBody()), "It has the expected value")
 
-        XCTAssertEqual(MockURLProtocol.startLoadingCallsCount, 1, "It calls `startLoading` once")
-        XCTAssertEqual(MockURLProtocol.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
+        XCTAssertEqual(URLProtocolMock.startLoadingCallsCount, 1, "It calls `startLoading` once")
+        XCTAssertEqual(URLProtocolMock.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
     }
 
     func testRunWithSuccessAndNonEmptyDataBody() throws {
@@ -73,7 +73,7 @@ final class CombineHTTPClientTests: XCTestCase {
         let fakeBody = FakeResponseBody(id: 10, description: "desc")
         let encodedFakeBody = try JSONEncoder().encode(fakeBody)
 
-        MockURLProtocol.stubbedRequestHandler = { request in
+        URLProtocolMock.stubbedRequestHandler = { request in
           let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil))
           return (response, encodedFakeBody)
         }
@@ -97,8 +97,8 @@ final class CombineHTTPClientTests: XCTestCase {
         XCTAssertEqual(receivedResponse?.statusCode, 200, "It has the correct status code")
         XCTAssertEqual(receivedResponse?.value, .success(fakeBody), "It has the expected decoded value")
 
-        XCTAssertEqual(MockURLProtocol.startLoadingCallsCount, 1, "It calls `startLoading` once")
-        XCTAssertEqual(MockURLProtocol.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
+        XCTAssertEqual(URLProtocolMock.startLoadingCallsCount, 1, "It calls `startLoading` once")
+        XCTAssertEqual(URLProtocolMock.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
     }
 
     // MARK: - Failure
@@ -109,7 +109,7 @@ final class CombineHTTPClientTests: XCTestCase {
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
         let url = try XCTUnwrap(request.url)
 
-        MockURLProtocol.stubbedRequestHandler = { request in
+        URLProtocolMock.stubbedRequestHandler = { request in
           let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: nil))
           return (response, Data())
         }
@@ -133,8 +133,8 @@ final class CombineHTTPClientTests: XCTestCase {
         XCTAssertEqual(receivedResponse?.statusCode, 404, "It has the correct status code")
         XCTAssertEqual(receivedResponse?.value, .failure(EmptyBody()), "It has the expected value")
 
-        XCTAssertEqual(MockURLProtocol.startLoadingCallsCount, 1, "It calls `startLoading` once")
-        XCTAssertEqual(MockURLProtocol.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
+        XCTAssertEqual(URLProtocolMock.startLoadingCallsCount, 1, "It calls `startLoading` once")
+        XCTAssertEqual(URLProtocolMock.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
     }
 
     func testRunWithFailureAndNonEmptyDataBody() throws {
@@ -146,7 +146,7 @@ final class CombineHTTPClientTests: XCTestCase {
         let fakeBody = FakeResponseBody(id: 10, description: "desc")
         let encodedFakeBody = try JSONEncoder().encode(fakeBody)
 
-        MockURLProtocol.stubbedRequestHandler = { request in
+        URLProtocolMock.stubbedRequestHandler = { request in
           let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 500, httpVersion: nil, headerFields: nil))
           return (response, encodedFakeBody)
         }
@@ -170,8 +170,8 @@ final class CombineHTTPClientTests: XCTestCase {
         XCTAssertEqual(receivedResponse?.statusCode, 500, "It has the correct status code")
         XCTAssertEqual(receivedResponse?.value, .failure(fakeBody), "It has the expected value")
 
-        XCTAssertEqual(MockURLProtocol.startLoadingCallsCount, 1, "It calls `startLoading` once")
-        XCTAssertEqual(MockURLProtocol.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
+        XCTAssertEqual(URLProtocolMock.startLoadingCallsCount, 1, "It calls `startLoading` once")
+        XCTAssertEqual(URLProtocolMock.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
     }
 
     // MARK: - Error
@@ -179,7 +179,7 @@ final class CombineHTTPClientTests: XCTestCase {
     func testRunWithError() throws {
         let runExpectation = expectation(description: "Client to run over mocked URLSession")
 
-        MockURLProtocol.stubbedError = FakeError()
+        URLProtocolMock.stubbedError = FakeError()
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
         var receivedError: HTTPResponseError?
@@ -205,65 +205,11 @@ final class CombineHTTPClientTests: XCTestCase {
             return
         }
 
-        XCTAssertEqual(MockURLProtocol.startLoadingCallsCount, 1, "It calls `startLoading` once")
-        XCTAssertEqual(MockURLProtocol.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
+        XCTAssertEqual(URLProtocolMock.startLoadingCallsCount, 1, "It calls `startLoading` once")
+        XCTAssertEqual(URLProtocolMock.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
     }
 
     func testWithMiddleware() throws {
         // TODO: Tbi. after middleware support is added
-    }
-}
-
-final class MockURLProtocol: URLProtocol {
-    static var startLoadingCallsCount: Int = 0
-    static var stopLoadingCallsCount: Int = 0
-
-    // MARK: - Stub
-
-    static var stubbedError: Error?
-    static var stubbedRequestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data?))?
-
-    static func cleanup() {
-        stubbedError = nil
-        stubbedRequestHandler = nil
-        startLoadingCallsCount = 0
-        stopLoadingCallsCount = 0
-    }
-
-    // MARK: - URLProtocol
-
-    override class func canInit(with request: URLRequest) -> Bool {
-        true
-    }
-
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
-        request
-    }
-
-    override func startLoading() {
-        Self.startLoadingCallsCount += 1
-
-        do {
-            if let stubbedError = Self.stubbedError {
-                throw stubbedError
-            }
-
-            guard let requestHandler = MockURLProtocol.stubbedRequestHandler else {
-                fatalError("Request handler must be stubbed")
-            }
-
-            let (response, data) = try requestHandler(request)
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            if let data = data {
-                client?.urlProtocol(self, didLoad: data)
-            }
-            client?.urlProtocolDidFinishLoading(self)
-        } catch {
-            client?.urlProtocol(self, didFailWithError: error)
-        }
-    }
-
-    override func stopLoading() {
-        Self.stopLoadingCallsCount += 1
     }
 }
