@@ -5,8 +5,8 @@ import HTTPClientCore
 
 public protocol HTTPClientProtocol {
     @discardableResult
-    func perform(_ request: URLRequest,
-                 completion: @escaping (Result<HTTPResponse, HTTPResponseError>) -> Void) -> HTTPTask
+    func run(_ request: URLRequest,
+             completion: @escaping (Result<HTTPResponse, HTTPResponseError>) -> Void) -> HTTPTask
 }
 
 // MARK: - Concrete
@@ -27,18 +27,15 @@ public final class HTTPClient: HTTPClientProtocol {
         self.middlewares = middlewares
     }
 
-    /// Performs the `request` with generic `ResponseBody` for handler and completion.
-    ///
-    /// *Note*: For empty body responses, or requests that only the result as success matters, **make sure** you use
-    /// `EmptyBody` decodable type.
+    /// Performs the `request` with and completes with a HTTPResponse Result.
     ///
     /// - Parameters:
     ///   - request: The `URLRequest` to be run.
     ///   - completion: The closure to be called when the request is complete.
     /// - Returns: A running HTTPTask.
     @discardableResult
-    public func perform(_ request: URLRequest,
-                        completion: @escaping (Result<HTTPResponse, HTTPResponseError>) -> Void) -> HTTPTask {
+    public func run(_ request: URLRequest,
+                    completion: @escaping (Result<HTTPResponse, HTTPResponseError>) -> Void) -> HTTPTask {
 
         middlewares?.forEach { $0.respond(to: request) }
 

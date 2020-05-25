@@ -11,8 +11,8 @@ public final class HTTPClientMock: HTTPClientProtocol {
     public init() { }
 
     @discardableResult
-    public func perform(_ request: URLRequest,
-                 completion: @escaping (Result<HTTPResponse, HTTPResponseError>) -> Void) -> HTTPTask {
+    public func run(_ request: URLRequest,
+                    completion: @escaping (Result<HTTPResponse, HTTPResponseError>) -> Void) -> HTTPTask {
         didCallPerform = true
         performCallsCount += 1
         lastRequest = request

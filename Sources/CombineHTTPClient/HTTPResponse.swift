@@ -1,3 +1,5 @@
+import Foundation
+
 /// Data for a HTTP responses that might contain `both success and failure Decodable bodies`.
 /// - note: Failure bodies are useful for when mapping specific error codes, messages or more complex error payloads returned by the API.
 /// e.g. A POST request sent to submit a form, where one of the fields have invalid content. The API returns a body containing the
@@ -19,11 +21,19 @@ public struct HTTPResponse<S: Decodable & Equatable, F: Decodable & Equatable>: 
 
     init(body: Data, decoder: JSONDecoder, validStatusCode: Set<Int>, statusCode: Int, urlResponse: URLResponse) throws {
         if validStatusCode.contains(statusCode) {
-            let decodedValue = try decoder.decode(S.self, from: body)
-            value = .success(decodedValue)
+            if S.self is EmptyBody.Type {
+                value = .success((EmptyBody() as! S))
+            } else {
+                let decodedValue = try decoder.decode(S.self, from: body)
+                value = .success(decodedValue)
+            }
         } else {
-            let decodedValue = try decoder.decode(F.self, from: body)
-            value = .failure(decodedValue)
+            if F.self is EmptyBody.Type {
+                value = .failure((EmptyBody() as! F))
+            } else {
+                let decodedValue = try decoder.decode(F.self, from: body)
+                value = .failure(decodedValue)
+            }
         }
 
         self.statusCode = statusCode

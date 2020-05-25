@@ -4,6 +4,10 @@ import PackageDescription
 
 let package = Package(
     name: "HTTPClient",
+    platforms: [
+        .macOS(.v10_15),
+        .iOS(.v13)
+    ],
     products: [
         // 🌐 An easy to use HTTPClient built on top of URLSession
         .library(
@@ -59,7 +63,10 @@ let package = Package(
         ),
         .testTarget(
             name: "CombineHTTPClientTests",
-            dependencies: [.target(name: "CombineHTTPClient")]
+            dependencies: [
+                .target(name: "CombineHTTPClient"),
+                .target(name: "HTTPClientTestSupport")
+            ]
         )
     ]
 )

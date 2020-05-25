@@ -1,195 +1,269 @@
 import XCTest
+import Foundation
+import Combine
+import HTTPClientCore
+import HTTPClientTestSupport
 @testable import CombineHTTPClient
-//@testable import HTTPClientCore
-//import Logging
 
 final class CombineHTTPClientTests: XCTestCase {
+    private var sut: CombineHTTPClient!
+    private var disposeBag: Set<AnyCancellable>! = .init()
 
-    private var sessionMock = URLSessionMock()
-    private var client: HTTPClient!
+    override func setUpWithError() throws {
+        try super.setUpWithError()
 
-    override func setUp() {
-        super.setUp()
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let urlSession = URLSession(configuration: configuration)
 
-        client = HTTPClient(session: sessionMock, responseHandler: HTTPResponseHandler(), middlewares: nil)
+        sut = CombineHTTPClient(session: urlSession)
+    }
+
+    override func tearDownWithError() throws {
+        disposeBag.removeAll()
+        disposeBag = nil
+        sut = nil
+        MockURLProtocol.cleanup()
+
+        try super.tearDownWithError()
     }
 
     // MARK: - Success
 
-    func testPerformWithSuccessAndEmptyDataBody() throws {
-        sessionMock.stubDataTask(toCompleteWithData: Data(), response: Helpers.makeURLResponse(statusCode: 200), error: nil)
+    func testRunWithSuccessAndEmptyDataBody() throws {
+        let runExpectation = expectation(description: "Client to run over mocked URLSession")
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
+        let url = try XCTUnwrap(request.url)
 
-        var resultBlock: Result<HTTPResponse, HTTPResponseError>?
-        client.perform(request) { result in
-            resultBlock = result
+        MockURLProtocol.stubbedRequestHandler = { request in
+          let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil))
+          return (response, nil)
         }
 
-        let httpResponse = try resultBlock?.get()
-        XCTAssertNotNil(httpResponse, "It is not nil")
-        XCTAssertEqual(httpResponse?.isSucceeded, true, "It is succeeded")
-        XCTAssertEqual(httpResponse?.statusCode, 200, "It has the correct status code")
-        XCTAssertNotNil(httpResponse?.successBody(), "It have a success body")
-        XCTAssertNil(httpResponse?.failureBody(), "It does not have a failure body")
-        XCTAssertTrue(sessionMock.didCallDataTask, "It calls `dataTask`")
-        XCTAssertEqual(sessionMock.lastRequest, request, "It passes in the correct URLRequest")
-        XCTAssertNotNil(sessionMock.lastCompletionHandler, "It received a completion handler")
+        var receivedResponse: HTTPResponse<EmptyBody, EmptyBody>?
+        let publisher: AnyPublisher<HTTPResponse<EmptyBody, EmptyBody>, HTTPResponseError> = sut.run(request, receiveOn: .main)
+        publisher.sink(receiveCompletion: { completion in
+            guard case .finished = completion else {
+                XCTFail("Should not receive a error completion")
+                return
+            }
+        }) { response in
+            receivedResponse = response
+            runExpectation.fulfill()
+        }.store(in: &disposeBag)
+
+        waitForExpectations(timeout: 1, handler: nil)
+
+        XCTAssertNotNil(receivedResponse, "It is not nil")
+        XCTAssertEqual(receivedResponse?.isSuccess, true, "It is success")
+        XCTAssertEqual(receivedResponse?.statusCode, 200, "It has the correct status code")
+        XCTAssertEqual(receivedResponse?.value, .success(EmptyBody()), "It has the expected value")
+
+        XCTAssertEqual(MockURLProtocol.startLoadingCallsCount, 1, "It calls `startLoading` once")
+        XCTAssertEqual(MockURLProtocol.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
     }
 
-    func testPerformWithSuccessAndNonEmptyDataBody() throws {
-        let expectedBodyMock = ResponseBodyMock(id: 10, description: "desc")
-        let encodedBodyMock = try JSONEncoder().encode(expectedBodyMock)
-        sessionMock.stubDataTask(toCompleteWithData: encodedBodyMock, response: Helpers.makeURLResponse(statusCode: 200), error: nil)
+    func testRunWithSuccessAndNonEmptyDataBody() throws {
+        let runExpectation = expectation(description: "Client to run over mocked URLSession")
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
+        let url = try XCTUnwrap(request.url)
 
-        var resultBlock: Result<HTTPResponse, HTTPResponseError>?
-        client.perform(request) { result in
-            resultBlock = result
+        let fakeBody = FakeResponseBody(id: 10, description: "desc")
+        let encodedFakeBody = try JSONEncoder().encode(fakeBody)
+
+        MockURLProtocol.stubbedRequestHandler = { request in
+          let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil))
+          return (response, encodedFakeBody)
         }
 
-        let httpResponse = try resultBlock?.get()
-        XCTAssertNotNil(httpResponse, "It is not nil")
-        XCTAssertEqual(httpResponse?.isSucceeded, true, "It is succeeded")
-        XCTAssertEqual(httpResponse?.statusCode, 200, "It has the correct status code")
-        XCTAssertNotNil(httpResponse?.successBody(), "It have a success body")
-        XCTAssertNil(httpResponse?.failureBody(), "It does not have a failure body")
+        var receivedResponse: HTTPResponse<FakeResponseBody, EmptyBody>?
+        let publisher: AnyPublisher<HTTPResponse<FakeResponseBody, EmptyBody>, HTTPResponseError> = sut.run(request, receiveOn: .main)
+        publisher.sink(receiveCompletion: { completion in
+            guard case .finished = completion else {
+                XCTFail("Should not receive a error completion")
+                return
+            }
+        }) { response in
+            receivedResponse = response
+            runExpectation.fulfill()
+        }.store(in: &disposeBag)
 
-        let decoder = HTTPResponseDecoder(jsonDecoder: JSONDecoder())
-        let decodedBody = try httpResponse?
-            .successBody()
-            .decoded(as: ResponseBodyMock.self, using: decoder)
-        XCTAssertEqual(decodedBody, expectedBodyMock, "It decodes the body as expected")
+        waitForExpectations(timeout: 1, handler: nil)
 
-        XCTAssertTrue(sessionMock.didCallDataTask, "It calls `dataTask`")
-        XCTAssertEqual(sessionMock.lastRequest, request, "It passes in the correct URLRequest")
-        XCTAssertNotNil(sessionMock.lastCompletionHandler, "It received a completion handler")
+        XCTAssertNotNil(receivedResponse, "It is not nil")
+        XCTAssertEqual(receivedResponse?.isSuccess, true, "It is success")
+        XCTAssertEqual(receivedResponse?.statusCode, 200, "It has the correct status code")
+        XCTAssertEqual(receivedResponse?.value, .success(fakeBody), "It has the expected decoded value")
+
+        XCTAssertEqual(MockURLProtocol.startLoadingCallsCount, 1, "It calls `startLoading` once")
+        XCTAssertEqual(MockURLProtocol.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
     }
 
     // MARK: - Failure
 
-    func testPerformWithFailureAndEmptyDataBody() throws {
-        let expectedURLResponse = Helpers.makeURLResponse(statusCode: 404)
-        sessionMock.stubDataTask(toCompleteWithData: Data(), response: expectedURLResponse, error: nil)
+    func testRunWithFailureAndEmptyDataBody() throws {
+        let runExpectation = expectation(description: "Client to run over mocked URLSession")
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
+        let url = try XCTUnwrap(request.url)
 
-        var resultBlock: Result<HTTPResponse, HTTPResponseError>?
-        client.perform(request) { result in
-            resultBlock = result
+        MockURLProtocol.stubbedRequestHandler = { request in
+          let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 404, httpVersion: nil, headerFields: nil))
+          return (response, Data())
         }
 
-        let httpResponse = try resultBlock?.get()
-        XCTAssertNotNil(httpResponse, "It is not nil")
-        XCTAssertEqual(httpResponse?.isSucceeded, false, "It is not succeeded")
-        XCTAssertEqual(httpResponse?.statusCode, 404, "It has the correct status code")
-        XCTAssertNil(httpResponse?.successBody(), "It does not have a success body")
-        XCTAssertNotNil(httpResponse?.failureBody(), "It does have a failure body")
-        XCTAssert(httpResponse?.urlResponse == expectedURLResponse, "It has the correct url response")
-        XCTAssertTrue(sessionMock.didCallDataTask, "It calls `dataTask`")
-        XCTAssertEqual(sessionMock.lastRequest, request, "It passes in the correct URLRequest")
-        XCTAssertNotNil(sessionMock.lastCompletionHandler, "It received a completion handler")
+        var receivedResponse: HTTPResponse<FakeResponseBody, EmptyBody>?
+        let publisher: AnyPublisher<HTTPResponse<FakeResponseBody, EmptyBody>, HTTPResponseError> = sut.run(request, receiveOn: .main)
+        publisher.sink(receiveCompletion: { completion in
+            guard case .finished = completion else {
+                XCTFail("Should not receive a error completion")
+                return
+            }
+        }) { response in
+            receivedResponse = response
+            runExpectation.fulfill()
+        }.store(in: &disposeBag)
+
+        waitForExpectations(timeout: 1, handler: nil)
+
+        XCTAssertNotNil(receivedResponse, "It is not nil")
+        XCTAssertEqual(receivedResponse?.isSuccess, false, "It is success")
+        XCTAssertEqual(receivedResponse?.statusCode, 404, "It has the correct status code")
+        XCTAssertEqual(receivedResponse?.value, .failure(EmptyBody()), "It has the expected value")
+
+        XCTAssertEqual(MockURLProtocol.startLoadingCallsCount, 1, "It calls `startLoading` once")
+        XCTAssertEqual(MockURLProtocol.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
     }
 
-    func testPerformWithFailureAndNonEmptyDataBody() throws {
-        let expectedErrorBodyMock = DecodableErrorMock(description: "desc", id: 8)
-        let encodedErrorBodyMock = try JSONEncoder().encode(expectedErrorBodyMock)
-        sessionMock.stubDataTask(toCompleteWithData: encodedErrorBodyMock, response: Helpers.makeURLResponse(statusCode: 500), error: nil)
+    func testRunWithFailureAndNonEmptyDataBody() throws {
+        let runExpectation = expectation(description: "Client to run over mocked URLSession")
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
+        let url = try XCTUnwrap(request.url)
 
-        var resultBlock: Result<HTTPResponse, HTTPResponseError>?
-        client.perform(request) { result in
-            resultBlock = result
+        let fakeBody = FakeResponseBody(id: 10, description: "desc")
+        let encodedFakeBody = try JSONEncoder().encode(fakeBody)
+
+        MockURLProtocol.stubbedRequestHandler = { request in
+          let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 500, httpVersion: nil, headerFields: nil))
+          return (response, encodedFakeBody)
         }
 
-        let httpResponse = try resultBlock?.get()
-        XCTAssertNotNil(httpResponse, "It is not nil")
-        XCTAssertEqual(httpResponse?.isSucceeded, false, "It is not succeeded")
-        XCTAssertEqual(httpResponse?.statusCode, 500, "It has the correct status code")
-        XCTAssertNil(httpResponse?.successBody(), "It does not have a success body")
-        XCTAssertNotNil(httpResponse?.failureBody(), "It does have a failure body")
+        var receivedResponse: HTTPResponse<EmptyBody, FakeResponseBody>?
+        let publisher: AnyPublisher<HTTPResponse<EmptyBody, FakeResponseBody>, HTTPResponseError> = sut.run(request, receiveOn: .main)
+        publisher.sink(receiveCompletion: { completion in
+            guard case .finished = completion else {
+                XCTFail("Should not receive a error completion")
+                return
+            }
+        }) { response in
+            receivedResponse = response
+            runExpectation.fulfill()
+        }.store(in: &disposeBag)
 
-        let decoder = HTTPResponseDecoder(jsonDecoder: JSONDecoder())
-        let decodedErrorBody = try httpResponse?
-            .failureBody()
-            .decoded(as: DecodableErrorMock.self, using: decoder)
-        XCTAssertEqual(decodedErrorBody, expectedErrorBodyMock, "It decodes the body as expected")
+        waitForExpectations(timeout: 1, handler: nil)
 
-        XCTAssertTrue(sessionMock.didCallDataTask, "It calls `dataTask`")
-        XCTAssertEqual(sessionMock.lastRequest, request, "It passes in the correct URLRequest")
-        XCTAssertNotNil(sessionMock.lastCompletionHandler, "It received a completion handler")
+        XCTAssertNotNil(receivedResponse, "It is not nil")
+        XCTAssertEqual(receivedResponse?.isSuccess, false, "It is success")
+        XCTAssertEqual(receivedResponse?.statusCode, 500, "It has the correct status code")
+        XCTAssertEqual(receivedResponse?.value, .failure(fakeBody), "It has the expected value")
+
+        XCTAssertEqual(MockURLProtocol.startLoadingCallsCount, 1, "It calls `startLoading` once")
+        XCTAssertEqual(MockURLProtocol.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
     }
 
     // MARK: - Error
 
-    func testPerformWithError() throws {
-        let error = NSError(domain: NSURLErrorDomain,
-                            code: URLError.secureConnectionFailed.rawValue,
-                            userInfo: nil)
-        sessionMock.stubDataTask(toCompleteWithData: nil, response: Helpers.makeURLResponse(statusCode: 400), error: error)
+    func testRunWithError() throws {
+        let runExpectation = expectation(description: "Client to run over mocked URLSession")
+
+        MockURLProtocol.stubbedError = FakeError()
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
+        var receivedError: HTTPResponseError?
+        let publisher: AnyPublisher<HTTPResponse<EmptyBody, FakeResponseBody>, HTTPResponseError> = sut.run(request, receiveOn: .main)
 
-        var resultBlock: Result<HTTPResponse, HTTPResponseError>?
-        client.perform(request) { result in
-            resultBlock = result
-        }
-
-        XCTAssertThrowsError(try resultBlock?.get(), "It throws error") { error in
-            let httpResponseError = error as? HTTPResponseError
-            guard case let .underlying(urlError) = httpResponseError else {
-                XCTFail("Received an unexpected HTTPRequestError")
+        publisher.sink(receiveCompletion: { completion in
+            guard case let .failure(error) = completion else {
+                XCTFail("Should receive a error completion")
                 return
             }
+            receivedError = error
+            runExpectation.fulfill()
+        }) { response in
+            XCTFail("Should not receive a valid response")
+        }.store(in: &disposeBag)
 
-            XCTAssertEqual(urlError as NSError, NSError(domain: NSURLErrorDomain,
-                                                        code: URLError.secureConnectionFailed.rawValue,
-                                                        userInfo: nil),
-                           "The error thrown is a NSURLErrorSecureConnectionFailed")
+        waitForExpectations(timeout: 1, handler: nil)
+
+        XCTAssertNotNil(receivedError, "It is not nil")
+
+        guard case .underlying = receivedError else {
+            XCTFail("Should have received an HTTPResponseError.underlying()")
+            return
         }
 
-        XCTAssertTrue(sessionMock.didCallDataTask, "It calls `dataTask`")
-        XCTAssertEqual(sessionMock.lastRequest, request, "It passes in the correct URLRequest")
-        XCTAssertNotNil(sessionMock.lastCompletionHandler, "It received a completion handler")
+        XCTAssertEqual(MockURLProtocol.startLoadingCallsCount, 1, "It calls `startLoading` once")
+        XCTAssertEqual(MockURLProtocol.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
     }
 
     func testWithMiddleware() throws {
-        let middlewareMock = MiddlewareMock()
-        client = HTTPClient(session: sessionMock, responseHandler: HTTPResponseHandler(), middlewares: [middlewareMock])
-
-        sessionMock.stubDataTask(toCompleteWithData: nil, response: Helpers.makeURLResponse(statusCode: 200), error: nil)
-
-        let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
-
-        var resultBlock: Result<HTTPResponse, HTTPResponseError>?
-        client.perform(request) { result in
-            resultBlock = result
-        }
-
-        XCTAssertTrue(middlewareMock.didCallRespondToRequest, "It called didCallRespondToRequest")
-        XCTAssertTrue(middlewareMock.didCallRespondToResult, "It called didCallRespondToResult")
-        XCTAssertEqual(middlewareMock.lastRequest, request, "It has received the correct request")
-        XCTAssertEqual(try middlewareMock.lastResult?.get(), try resultBlock?.get(), "It has received the correct result")
+        // TODO: Tbi. after middleware support is added
     }
 }
 
-// MARK: - Middleware mock
+final class MockURLProtocol: URLProtocol {
+    static var startLoadingCallsCount: Int = 0
+    static var stopLoadingCallsCount: Int = 0
 
-final class MiddlewareMock: HTTPClientMiddleware {
-    private(set) var didCallRespondToRequest: Bool = false
-    private(set) var didCallRespondToResult: Bool = false
-    private(set) var lastRequest: URLRequest?
-    private(set) var lastResult: Result<HTTPResponse, HTTPResponseError>?
+    // MARK: - Stub
 
-    func respond(to request: URLRequest) {
-        didCallRespondToRequest = true
-        lastRequest = request
+    static var stubbedError: Error?
+    static var stubbedRequestHandler: ((URLRequest) throws -> (HTTPURLResponse, Data?))?
+
+    static func cleanup() {
+        stubbedError = nil
+        stubbedRequestHandler = nil
+        startLoadingCallsCount = 0
+        stopLoadingCallsCount = 0
     }
 
-    func respond(to responseResult: Result<HTTPResponse, HTTPResponseError>) {
-        didCallRespondToResult = true
-        lastResult = responseResult
+    // MARK: - URLProtocol
+
+    override class func canInit(with request: URLRequest) -> Bool {
+        true
+    }
+
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest {
+        request
+    }
+
+    override func startLoading() {
+        Self.startLoadingCallsCount += 1
+
+        do {
+            if let stubbedError = Self.stubbedError {
+                throw stubbedError
+            }
+
+            guard let requestHandler = MockURLProtocol.stubbedRequestHandler else {
+                fatalError("Request handler must be stubbed")
+            }
+
+            let (response, data) = try requestHandler(request)
+            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+            if let data = data {
+                client?.urlProtocol(self, didLoad: data)
+            }
+            client?.urlProtocolDidFinishLoading(self)
+        } catch {
+            client?.urlProtocol(self, didFailWithError: error)
+        }
+    }
+
+    override func stopLoading() {
+        Self.stopLoadingCallsCount += 1
     }
 }

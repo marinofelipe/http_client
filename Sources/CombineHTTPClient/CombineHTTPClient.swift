@@ -2,6 +2,8 @@ import Combine
 import HTTPClientCore
 import Foundation
 
+public struct EmptyBody: Decodable, Equatable { }
+
 /// An HTTP client built on top of Combine and its Foundation conveniences.
 public struct CombineHTTPClient {
     private let session: URLSession
@@ -13,7 +15,7 @@ public struct CombineHTTPClient {
     /// Performs the `request` with generic `S` and `F` for success and failure response bodies respectively.
     ///
     /// *Note*: For empty body responses, or requests that only the result as success matters,
-    /// **make sure** you make it generic over `Void`.
+    /// **make sure** you use `EmptyBody` decodable type.
     ///
     /// - Parameters:
     ///   - request: The `URLRequest` to be run.
@@ -24,20 +26,20 @@ public struct CombineHTTPClient {
     /// - Returns: A publisher that emits `HTTPResponse`s or `HTTPRequestError`s.
     @discardableResult
     public func run<S: Decodable, F: Decodable>(_ request: URLRequest,
-                                                validStatusCode: Set<Int> = .defaultValidStatusCodes,
+                                                validStatusCode: Set<Int> = .defaultSuccessfulStatusCodes,
                                                 successDecoder: JSONDecoder = .init(),
                                                 failureDecoder: JSONDecoder = .init(),
-                                                receiveOn completionQueue: DispatchQueue) -> AnyPublisher<HTTPResponse<S, F>, HTTPRequestError> {
+                                                receiveOn completionQueue: DispatchQueue) -> AnyPublisher<HTTPResponse<S, F>, HTTPResponseError> {
         session.dataTaskPublisher(for: request)
             .tryMap { (data, response) -> HTTPResponse<S, F> in
-                guard let httpResponse = response as? HTTPURLResponse else { throw HTTPRequestError.invalidResponseType }
+                guard let httpResponse = response as? HTTPURLResponse else { throw HTTPResponseError.invalidResponse(response) }
                 return try HTTPResponse<S, F>(body: data,
                                               decoder: successDecoder,
                                               validStatusCode: validStatusCode,
                                               statusCode: httpResponse.statusCode,
                                               urlResponse: httpResponse)
             }
-        .mapError { error -> HTTPRequestError in
+        .mapError { error -> HTTPResponseError in
             if let urlError = error as? URLError {
                 return .underlying(urlError)
             }
