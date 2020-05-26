@@ -18,6 +18,11 @@ let package = Package(
         .library(
             name: "CombineHTTPClient",
             targets: ["CombineHTTPClient"]
+        ),
+        // 🔎 A test support framework that can help you on testing or mocking the HTTPClient
+        .library(
+            name: "HTTPClientTestSupport",
+            targets: ["HTTPClientTestSupport"]
         )
     ],
     dependencies: [
