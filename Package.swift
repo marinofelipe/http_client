@@ -12,12 +12,12 @@ let package = Package(
         // 🌐 An easy to use HTTPClient built on top of URLSession
         .library(
             name: "HTTPClient",
-            targets: ["HTTPClient"]
+            targets: ["HTTPClient", "HTTPClientCore"]
         ),
         // 🌐🚜 An easy to use HTTPClient built for Combine on top of URLSession and Foundation Combine's conveniences
         .library(
             name: "CombineHTTPClient",
-            targets: ["CombineHTTPClient"]
+            targets: ["CombineHTTPClient", "HTTPClientCore"]
         ),
         // 🔎 A test support framework that can help you on testing or mocking the HTTPClient
         .library(
