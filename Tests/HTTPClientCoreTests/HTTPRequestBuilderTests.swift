@@ -45,7 +45,7 @@ final class HTTPRequestBuilderTests: XCTestCase {
 
         let request = try! builder
             .path("/path")
-            .body(ResponseBodyMock(id: 10, description: "Desc"))
+            .body(FakeResponseBody(id: 10, description: "Desc"))
             .build()
 
         XCTAssertNotNil(request, "It is not nil")
@@ -53,8 +53,8 @@ final class HTTPRequestBuilderTests: XCTestCase {
         XCTAssertEqual(request.url?.absoluteString, "http://www.apple.com/path", "It has the correct url string")
         XCTAssertNotNil(request.httpBody, "It has a request body")
 
-        let decodedBody = try! JSONDecoder().decode(ResponseBodyMock.self, from: request.httpBody!)
-        XCTAssertEqual(decodedBody, ResponseBodyMock(id: 10, description: "Desc"), "The request body has the correct properties when decoded")
+        let decodedBody = try! JSONDecoder().decode(FakeResponseBody.self, from: request.httpBody!)
+        XCTAssertEqual(decodedBody, FakeResponseBody(id: 10, description: "Desc"), "The request body has the correct properties when decoded")
     }
 
     // MARK: - Tests - Invalid
@@ -95,7 +95,7 @@ final class HTTPRequestBuilderTests: XCTestCase {
             .queryItems([URLQueryItem(name: "name", value: "value")])
             .additionalHeaders(["other": "2"])
             .timeoutInterval(5)
-            .body(ResponseBodyMock(id: 10, description: "Desc"))
+            .body(FakeResponseBody(id: 10, description: "Desc"))
             .build()
 
         let secondRequest = try! builder

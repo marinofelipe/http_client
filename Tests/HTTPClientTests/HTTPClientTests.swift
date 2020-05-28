@@ -23,7 +23,7 @@ final class HTTPClientTests: XCTestCase {
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
 
         var resultBlock: Result<HTTPResponse, HTTPResponseError>?
-        client.perform(request) { result in
+        client.run(request) { result in
             resultBlock = result
         }
 
@@ -39,14 +39,14 @@ final class HTTPClientTests: XCTestCase {
     }
 
     func testPerformWithSuccessAndNonEmptyDataBody() throws {
-        let expectedBodyMock = ResponseBodyMock(id: 10, description: "desc")
+        let expectedBodyMock = FakeResponseBody(id: 10, description: "desc")
         let encodedBodyMock = try JSONEncoder().encode(expectedBodyMock)
         sessionMock.stubDataTask(toCompleteWithData: encodedBodyMock, response: Helpers.makeURLResponse(statusCode: 200), error: nil)
 
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
 
         var resultBlock: Result<HTTPResponse, HTTPResponseError>?
-        client.perform(request) { result in
+        client.run(request) { result in
             resultBlock = result
         }
 
@@ -60,7 +60,7 @@ final class HTTPClientTests: XCTestCase {
         let decoder = HTTPResponseDecoder(jsonDecoder: JSONDecoder())
         let decodedBody = try httpResponse?
             .successBody()
-            .decoded(as: ResponseBodyMock.self, using: decoder)
+            .decoded(as: FakeResponseBody.self, using: decoder)
         XCTAssertEqual(decodedBody, expectedBodyMock, "It decodes the body as expected")
 
         XCTAssertTrue(sessionMock.didCallDataTask, "It calls `dataTask`")
@@ -77,7 +77,7 @@ final class HTTPClientTests: XCTestCase {
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
 
         var resultBlock: Result<HTTPResponse, HTTPResponseError>?
-        client.perform(request) { result in
+        client.run(request) { result in
             resultBlock = result
         }
 
@@ -101,7 +101,7 @@ final class HTTPClientTests: XCTestCase {
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
 
         var resultBlock: Result<HTTPResponse, HTTPResponseError>?
-        client.perform(request) { result in
+        client.run(request) { result in
             resultBlock = result
         }
 
@@ -134,7 +134,7 @@ final class HTTPClientTests: XCTestCase {
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
 
         var resultBlock: Result<HTTPResponse, HTTPResponseError>?
-        client.perform(request) { result in
+        client.run(request) { result in
             resultBlock = result
         }
 
@@ -165,7 +165,7 @@ final class HTTPClientTests: XCTestCase {
         let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
 
         var resultBlock: Result<HTTPResponse, HTTPResponseError>?
-        client.perform(request) { result in
+        client.run(request) { result in
             resultBlock = result
         }
 
