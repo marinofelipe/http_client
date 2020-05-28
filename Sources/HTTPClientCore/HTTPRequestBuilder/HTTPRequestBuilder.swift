@@ -17,15 +17,9 @@ public enum HTTPRequestBuilderError: Error, CustomDebugStringConvertible {
     }
 }
 
-// MARK: - Abstraction
+// MARK: - Builder
 
-public protocol HTTPRequestBuilding {
-    func build() throws -> URLRequest
-}
-
-// MARK: - Concrete
-
-public final class HTTPRequestBuilder: HTTPRequestBuilding {
+public final class HTTPRequestBuilder {
 
     // MARK: Builder properties
 
@@ -49,8 +43,8 @@ public final class HTTPRequestBuilder: HTTPRequestBuilding {
         self.host = host
         self.headers = headers
         self.allHeaders = headers
-        urlComponents.host = host
-        urlComponents.scheme = scheme.rawValue
+        self.urlComponents.host = host
+        self.urlComponents.scheme = scheme.rawValue
     }
 
     // MARK: API
