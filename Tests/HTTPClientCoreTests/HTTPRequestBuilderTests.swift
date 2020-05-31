@@ -57,6 +57,26 @@ final class HTTPRequestBuilderTests: XCTestCase {
         XCTAssertEqual(decodedBody, FakeResponseBody(id: 10, description: "Desc"), "The request body has the correct properties when decoded")
     }
 
+    func testBuildingValidRequestWithCustomPort() {
+        let builder = HTTPRequestBuilder(scheme: .https, host: "127.0.0.1", headers: ["key": "value"])
+
+        let request = try! builder
+            .path("/path")
+            .port(8080)
+            .method(.get)
+            .queryItems([URLQueryItem(name: "name", value: "value")])
+            .additionalHeaders(["other": "2"])
+            .build()
+
+        XCTAssertNotNil(request, "It is not nil")
+        XCTAssertNotNil(request.url, "It is not nil")
+        XCTAssertEqual(request.url?.absoluteString, "https://127.0.0.1:8080/path?name=value", "It has the correct url string")
+        XCTAssertEqual(request.allHTTPHeaderFields?.count, 2, "It has the expected headers count")
+        XCTAssertEqual(request.allHTTPHeaderFields?["key"], "value", "It has the expected value for key")
+        XCTAssertEqual(request.allHTTPHeaderFields?["other"], "2", "It has the expected value for key")
+        XCTAssertEqual(request.httpMethod, "GET", "It has the correct http method")
+    }
+
     // MARK: - Tests - Invalid
 
     func testBuildingRequestWithInvalidPath() {

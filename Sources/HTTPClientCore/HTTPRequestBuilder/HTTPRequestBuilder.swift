@@ -56,6 +56,12 @@ public final class HTTPRequestBuilder {
     }
 
     @discardableResult
+    public func port(_ port: Int) -> HTTPRequestBuilder {
+        urlComponents.port = port
+        return self
+    }
+
+    @discardableResult
     public func method(_ method: HTTPRequestMethod) -> HTTPRequestBuilder {
         self.method = method
         return self
