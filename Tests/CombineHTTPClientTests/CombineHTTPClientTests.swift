@@ -209,6 +209,49 @@ final class CombineHTTPClientTests: XCTestCase {
         XCTAssertEqual(URLProtocolMock.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
     }
 
+    func testRunWithFailureByDecodingError() throws {
+        let runExpectation = expectation(description: "Client to run over mocked URLSession")
+
+        let fakeBody = FakeResponseBody(id: 10, description: "desc")
+        let encodedFakeBody = try JSONEncoder().encode(fakeBody)
+
+        let request = try HTTPRequestBuilder(scheme: .https, host: "www.apple.com").build()
+        let url = try XCTUnwrap(request.url)
+
+        URLProtocolMock.stubbedRequestHandler = { request in
+            let response = try XCTUnwrap(HTTPURLResponse(url: url, statusCode: 500, httpVersion: nil, headerFields: nil))
+            return (response, encodedFakeBody)
+        }
+
+        var receivedError: HTTPResponseError?
+        let publisher: AnyPublisher<HTTPResponse<EmptyBody, Int>, HTTPResponseError> = sut.run(request, receiveOn: .main)
+
+        publisher.sink(receiveCompletion: { completion in
+            guard case let .failure(error) = completion else {
+                XCTFail("Should receive a error completion")
+                return
+            }
+            receivedError = error
+            runExpectation.fulfill()
+        }) { response in
+            XCTFail("Should not receive a valid response")
+        }.store(in: &disposeBag)
+
+        waitForExpectations(timeout: 1, handler: nil)
+
+        XCTAssertNotNil(receivedError, "It is not nil")
+
+        guard case .decoding = receivedError else {
+            XCTFail("Should have received an HTTPResponseError.underlying()")
+            return
+        }
+
+        XCTAssertEqual(URLProtocolMock.startLoadingCallsCount, 1, "It calls `startLoading` once")
+        XCTAssertEqual(URLProtocolMock.stopLoadingCallsCount, 1, "It calls `stopLoading` once")
+    }
+
+    // MARK: - Middleware
+
     func testWithMiddleware() throws {
         // TODO: Tbi. after middleware support is added
     }

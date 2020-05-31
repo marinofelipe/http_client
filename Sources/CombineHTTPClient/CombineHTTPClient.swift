@@ -42,6 +42,8 @@ public struct CombineHTTPClient {
         .mapError { error -> HTTPResponseError in
             if let urlError = error as? URLError {
                 return .underlying(urlError)
+            } else if let decodingError = error as? DecodingError {
+                return .decoding(decodingError)
             }
             return .unknown
         }
