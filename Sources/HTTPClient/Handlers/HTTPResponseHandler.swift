@@ -38,10 +38,6 @@ public struct HTTPResponseHandler: HTTPResponseHandling {
             }
         }
 
-        guard successfulStatusCodes.contains(response.statusCode) else {
-            return (isSucceeded: false, statusCode: response.statusCode)
-        }
-
-        return (isSucceeded: true, statusCode: response.statusCode)
+        return (isSucceeded: successfulStatusCodes.contains(response.statusCode), statusCode: response.statusCode)
     }
 }
