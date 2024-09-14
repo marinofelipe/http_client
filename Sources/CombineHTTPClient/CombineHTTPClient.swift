@@ -1,6 +1,9 @@
 import Combine
 import HTTPClientCore
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public struct EmptyBody: Decodable, Equatable { }
 

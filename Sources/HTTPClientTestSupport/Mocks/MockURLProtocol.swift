@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// A mock that can be used to run stubbed URLSession tasks.
 public final class URLProtocolMock: URLProtocol {

@@ -5,12 +5,12 @@ import Foundation
 /// e.g. A POST request sent to submit a form, where one of the fields have invalid content. The API returns a body containing the
 /// user facing localized message and the invalid field to make the life easier for the FE clients.
 public struct HTTPResponse<S: Decodable & Equatable, F: Decodable & Equatable>: Equatable {
-    public enum Value<S: Decodable & Equatable, F: Decodable & Equatable>: Equatable {
+    public enum Value: Equatable {
         case success(S)
         case failure(F)
     }
 
-    public let value: Value<S, F>
+    public let value: Value
     public let statusCode: Int
     public let urlResponse: URLResponse
 

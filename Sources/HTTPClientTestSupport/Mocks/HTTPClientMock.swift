@@ -1,6 +1,9 @@
 import HTTPClient
 import HTTPClientCore
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public final class HTTPClientMock: HTTPClientProtocol {
     public private(set) var didCallPerform: Bool = false

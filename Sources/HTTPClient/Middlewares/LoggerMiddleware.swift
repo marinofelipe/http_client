@@ -1,5 +1,8 @@
 import Logging
-import struct Foundation.URLRequest
+import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import HTTPClientCore
 
 public final class LoggerMiddleware: HTTPClientMiddleware {
