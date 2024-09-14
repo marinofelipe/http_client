@@ -1,6 +1,6 @@
 # 🌐🚜 (Combine)HTTPClient
 
-[![Swift 5.2](https://img.shields.io/badge/swift-5.2-ED523F.svg?style=flat)](https://swift.org/download/)
+[![Swift 6.0](https://img.shields.io/badge/swift-6.0-ED523F.svg?style=flat)](https://swift.org/download/)
 [![Swift Package Manager](https://rawgit.com/jlyonsmith/artwork/master/SwiftPackageManager/swiftpackagemanager-compatible.svg)](https://swift.org/package-manager/)
 [![@_marinofelipe](https://img.shields.io/badge/contact-@_marinofelipe-5AA9E7.svg?style=flat)](https://twitter.com/_marinofelipe)
 
