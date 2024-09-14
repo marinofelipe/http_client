@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 enum Helpers {
     static func makeURLResponse(statusCode: Int) -> URLResponse {

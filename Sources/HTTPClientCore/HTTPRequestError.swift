@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Possible errors for an HTTP response.
 public enum HTTPResponseError: Error, CustomDebugStringConvertible {

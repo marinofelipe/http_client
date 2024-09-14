@@ -1,5 +1,8 @@
 @testable import HTTPClient
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 public extension HTTPResponse {
     static func makeSuccessFake(with data: Data) -> HTTPResponse {
