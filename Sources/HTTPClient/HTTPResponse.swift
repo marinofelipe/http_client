@@ -1,5 +1,7 @@
-import class Foundation.URLResponse
-import struct Foundation.Data
+import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import HTTPClientCore
 
 public struct HTTPResponse: Equatable {

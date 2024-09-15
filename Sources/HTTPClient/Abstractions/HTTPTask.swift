@@ -1,4 +1,7 @@
-import class Foundation.URLSessionTask
+import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// An abstract interface to network tasks.
 public protocol HTTPTask {

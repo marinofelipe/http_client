@@ -1,4 +1,7 @@
-import struct Foundation.Data
+import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 // MARK: - Decoded
 
